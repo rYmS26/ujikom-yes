@@ -10,7 +10,7 @@
     </div>
     @endif
 
-    <form action="{{ route('pemakaian.store') }}" method="POST">
+    <form action="{{ route('pemakaian.store') }}" method="POST" id="pemakaianForm">
         @csrf
         <!-- No Kontrol -->
         <div class="mb-4">
@@ -46,28 +46,39 @@
             </select>
         </div>
 
-        <!-- Tahun -->
-        <div class="mb-4">
-            <label for="tahun" class="block text-sm font-medium text-gray-700">Tahun</label>
-            <select name="tahun" id="tahun" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
-                @for ($i = now()->year; $i >= 2000; $i--)
-                    <option value="{{ $i }}">{{ $i }}</option>
-                @endfor
-            </select>
-        </div>
+        <!-- Tahun dan Bulan Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Tahun -->
+            <div class="mb-4">
+                <label for="tahun" class="block text-sm font-medium text-gray-700">Tahun</label>
+                <!-- Hidden select for initial value -->
+                <select name="tahun" id="tahunSelect" class="hidden">
+                    @for ($i = now()->year; $i >= 2000; $i--)
+                        <option value="{{ $i }}">{{ $i }}</option>
+                    @endfor
+                </select>
+                <!-- Visible read-only input -->
+                <input type="text" id="tahunDisplay" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                <input type="hidden" name="tahun" id="tahunHidden">
+            </div>
 
-        <!-- Bulan -->
-        <div class="mb-4">
-            <label for="bulan" class="block text-sm font-medium text-gray-700">Bulan</label>
-            <select name="bulan" id="bulan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
-                @foreach ([
-                    '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
-                    '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
-                    '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
-                ] as $num => $name)
-                    <option value="{{ $num }}" data-month-name="{{ $name }}">{{ $name }}</option>
-                @endforeach
-            </select>
+            <!-- Bulan -->
+            <div class="mb-4">
+                <label for="bulan" class="block text-sm font-medium text-gray-700">Bulan</label>
+                <!-- Hidden select for initial value -->
+                <select name="bulan" id="bulanSelect" class="hidden">
+                    @foreach ([
+                        '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
+                        '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
+                        '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+                    ] as $num => $name)
+                        <option value="{{ $num }}" data-month-name="{{ $name }}">{{ $name }}</option>
+                    @endforeach
+                </select>
+                <!-- Visible read-only input -->
+                <input type="text" id="bulanDisplay" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                <input type="hidden" name="bulan" id="bulanHidden">
+            </div>
         </div>
 
         <!-- Pesan Peringatan untuk Bulan yang Sudah Dibayar -->
@@ -78,7 +89,7 @@
         <!-- Meter Awal -->
         <div class="mb-4">
             <label for="meterawal" class="block text-sm font-medium text-gray-700">Meter Awal</label>
-            <input type="number" name="meterawal" id="meterawal" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+            <input type="number" name="meterawal" id="meterawal" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly required>
         </div>
 
         <!-- Meter Akhir -->
@@ -90,19 +101,19 @@
         <!-- Jumlah Pakai -->
         <div class="mb-4">
             <label for="jumlahpakai" class="block text-sm font-medium text-gray-700">Jumlah Pakai</label>
-            <input type="number" name="jumlahpakai" id="jumlahpakai" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" readonly>
+            <input type="number" name="jumlahpakai" id="jumlahpakai" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
         </div>
 
         <!-- Biaya Beban -->
         <div class="mb-4">
             <label for="biayabebanpemakai" class="block text-sm font-medium text-gray-700">Biaya Beban</label>
-            <input type="number" name="biayabebanpemakai" id="biayabebanpemakai" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" readonly>
+            <input type="number" name="biayabebanpemakai" id="biayabebanpemakai" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
         </div>
 
         <!-- Biaya Pemakaian -->
         <div class="mb-4">
             <label for="biayapemakaian" class="block text-sm font-medium text-gray-700">Biaya Pemakaian</label>
-            <input type="number" name="biayapemakaian" id="biayapemakaian" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" readonly>
+            <input type="number" name="biayapemakaian" id="biayapemakaian" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
         </div>
 
         <!-- Status -->
@@ -114,7 +125,7 @@
         <!-- Jumlah Bayar -->
         <div class="mb-4">
             <label for="jumlahbayar" class="block text-sm font-medium text-gray-700">Jumlah Bayar</label>
-            <input type="number" name="jumlahbayar" id="jumlahbayar" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" readonly>
+            <input type="number" name="jumlahbayar" id="jumlahbayar" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
         </div>
 
         <!-- Tombol Submit -->
@@ -130,13 +141,19 @@
     const biayaPemakaianInput = document.getElementById('biayapemakaian');
     const jumlahBayarInput = document.getElementById('jumlahbayar');
     const noKontrolSelect = document.getElementById('NoKontrol');
-    const tahunSelect = document.getElementById('tahun');
-    const bulanSelect = document.getElementById('bulan');
+    const tahunSelect = document.getElementById('tahunSelect');
+    const bulanSelect = document.getElementById('bulanSelect');
+    const tahunDisplay = document.getElementById('tahunDisplay');
+    const bulanDisplay = document.getElementById('bulanDisplay');
+    const tahunHidden = document.getElementById('tahunHidden');
+    const bulanHidden = document.getElementById('bulanHidden');
     const bulanAlert = document.getElementById('bulanAlert');
     const submitButton = document.getElementById('submitButton');
+    const pemakaianForm = document.getElementById('pemakaianForm');
 
     // Menyimpan data bulan yang sudah dibayar
     let paidMonths = {};
+    let isConsecutiveMonthValid = false;
 
     // Tambahkan kode ini di bagian <script> setelah deklarasi variabel
     const searchInput = document.getElementById('searchPelanggan');
@@ -325,7 +342,6 @@
     }
 
     // Event listeners
-    meterAwalInput.addEventListener('input', calculateJumlahPakai);
     meterAkhirInput.addEventListener('input', calculateJumlahPakai);
 
     noKontrolSelect.addEventListener('change', function () {
@@ -336,16 +352,138 @@
 
         // Periksa bulan yang sudah dibayar
         checkPaidMonths();
+
+        // Get the last meter reading for this customer
+        const noKontrol = this.value;
+        if (noKontrol) {
+            fetch(`/get-last-meter-reading/${noKontrol}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.meterakhir) {
+                        // Set the initial meter reading to the last final meter reading
+                        meterAwalInput.value = data.meterakhir;
+
+                        // Store the last payment period
+                        meterAwalInput.dataset.lastYear = data.tahun;
+                        meterAwalInput.dataset.lastMonth = data.bulan;
+
+                        // Check if the selected month is the next month after the last payment
+                        validateConsecutiveMonth();
+                    } else {
+                        // If no previous reading, set to 0
+                        meterAwalInput.value = 0;
+
+                        // Set current month and year
+                        const now = new Date();
+                        tahunSelect.value = now.getFullYear().toString();
+                        bulanSelect.value = (now.getMonth() + 1).toString().padStart(2, '0');
+
+                        // Update displays
+                        updateDisplays();
+
+                        // Enable submit button
+                        submitButton.disabled = false;
+                        isConsecutiveMonthValid = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching last meter reading:', error);
+                });
+        }
     });
 
-    tahunSelect.addEventListener('change', function() {
-        // Perbarui tampilan bulan
-        updateMonthDisplay();
-    });
+    // Function to update the display fields
+    function updateDisplays() {
+        const selectedYear = tahunSelect.value;
+        const selectedMonth = bulanSelect.value;
+        const selectedMonthName = bulanSelect.options[bulanSelect.selectedIndex].getAttribute('data-month-name');
 
-    bulanSelect.addEventListener('change', function() {
-        // Periksa bulan yang dipilih saat ini
-        checkCurrentMonth();
+        // Update display fields
+        tahunDisplay.value = selectedYear;
+        bulanDisplay.value = selectedMonthName;
+
+        // Update hidden fields for form submission
+        tahunHidden.value = selectedYear;
+        bulanHidden.value = selectedMonth;
+    }
+
+    // Add these new functions to validate consecutive months
+    function validateConsecutiveMonth() {
+        const lastYear = parseInt(meterAwalInput.dataset.lastYear);
+        const lastMonth = parseInt(meterAwalInput.dataset.lastMonth);
+
+        // Calculate next month after last payment
+        let nextMonth = lastMonth + 1;
+        let nextYear = lastYear;
+
+        if (nextMonth > 12) {
+            nextMonth = 1;
+            nextYear++;
+        }
+
+        // Set the correct month and year in the selects
+        for (let i = 0; i < tahunSelect.options.length; i++) {
+            if (parseInt(tahunSelect.options[i].value) === nextYear) {
+                tahunSelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        for (let i = 0; i < bulanSelect.options.length; i++) {
+            if (parseInt(bulanSelect.options[i].value) === nextMonth) {
+                bulanSelect.selectedIndex = i;
+                break;
+            }
+        }
+
+        // Update the display fields
+        updateDisplays();
+
+        // Check if the month is already paid
+        const nextMonthStr = nextMonth.toString().padStart(2, '0');
+        if (paidMonths[nextYear] && paidMonths[nextYear].includes(nextMonthStr)) {
+            bulanAlert.textContent = `Bulan ${getMonthName(nextMonth)} ${nextYear} sudah dibayar.`;
+            bulanAlert.classList.remove('hidden');
+            submitButton.disabled = true;
+            isConsecutiveMonthValid = false;
+        } else {
+            bulanAlert.classList.add('hidden');
+            submitButton.disabled = false;
+            isConsecutiveMonthValid = true;
+        }
+    }
+
+    // Helper function to get month name
+    function getMonthName(monthNumber) {
+        const months = [
+            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+        ];
+        return months[monthNumber - 1];
+    }
+
+    // Prevent form submission if validation fails
+    pemakaianForm.addEventListener('submit', function(e) {
+        // Check if meter akhir is filled
+        if (!meterAkhirInput.value) {
+            e.preventDefault();
+            alert('Silakan isi meter akhir');
+            return;
+        }
+
+        // Check if meter akhir is greater than meter awal
+        if (parseInt(meterAkhirInput.value) <= parseInt(meterAwalInput.value)) {
+            e.preventDefault();
+            alert('Meter akhir harus lebih besar dari meter awal');
+            return;
+        }
+
+        // Check if consecutive month validation passed
+        if (!isConsecutiveMonthValid) {
+            e.preventDefault();
+            alert('Anda harus mengisi data untuk bulan yang berurutan');
+            return;
+        }
     });
 
     // Inisialisasi form

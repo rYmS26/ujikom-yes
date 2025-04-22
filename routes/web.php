@@ -1,31 +1,32 @@
 <?php
 
-use App\Http\Controllers\AkunController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\JenisPelangganController;
-use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\PelangganController;
-use App\Http\Controllers\PemakaianController;
-use App\Http\Controllers\PembayaranController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\SearchController;
-use App\Http\Controllers\TarifController;
 use App\Models\Pelanggan;
 use App\Models\Pemakaian;
 use App\Models\Pembayaran;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AkunController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\TarifController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PelangganController;
+use App\Http\Controllers\PemakaianController;
+use App\Http\Controllers\PembayaranController;
+use App\Http\Controllers\JenisPelangganController;
 
 // Route::get('/', function () {
 //     return view('welcome');
 // });
 
-Route::get('/dashboard', function () {
-    $totalPelanggan = Pelanggan::count();
-        $totalPemakaian = Pemakaian::count();
-        $totalBelumBayar = Pemakaian::where('status', 'Belum Bayar')->sum('jumlahbayar');
-        $totalSudahBayar = Pemakaian::where('status', 'Lunas')->sum('jumlahbayar');
-    return view('dashboard', compact('totalPelanggan', 'totalPemakaian', 'totalBelumBayar', 'totalSudahBayar'));
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard routes
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+Route::get('/api/chart-data', [DashboardController::class, 'getChartData'])
+    ->middleware(['auth', 'verified']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/pelanggan', [PelangganController::class,'pelanggan'])->name('customers.index');
@@ -104,6 +105,8 @@ Route::prefix('laporan')->name('laporan.')->group(function () {
     Route::get('/pemakaian/edit/{id}', [PemakaianController::class, 'edit'])->name('pemakaian.edit');
     Route::put('/pemakaian/edit/{id}', [PemakaianController::class, 'update'])->name('pemakaian.update');
     Route::delete('/pemakaian/{id}', [PemakaianController::class, 'destroy'])->name('pemakaian.destroy');
+    // Route for getting last meter reading
+    Route::get('/get-last-meter-reading/{noKontrol}', [PemakaianController::class, 'getLastMeterReading']);
 
     Route::get('/history', [PemakaianController::class, 'history'])->name('history.index');
 });

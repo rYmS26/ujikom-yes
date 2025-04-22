@@ -28,19 +28,22 @@ class LaporanController extends Controller
 
         // Get months for dropdown (1-12)
         $months = [
-            '01' => 'Januari',
-            '02' => 'Februari',
-            '03' => 'Maret',
-            '04' => 'April',
-            '05' => 'Mei',
-            '06' => 'Juni',
-            '07' => 'Juli',
-            '08' => 'Agustus',
-            '09' => 'September',
+            '1' => 'Januari',
+            '2' => 'Februari',
+            '3' => 'Maret',
+            '4' => 'April',
+            '5' => 'Mei',
+            '6' => 'Juni',
+            '7' => 'Juli',
+            '8' => 'Agustus',
+            '9' => 'September',
             '10' => 'Oktober',
             '11' => 'November',
             '12' => 'Desember'
         ];
+
+        // Get paginated pemakaian data for history tab
+        $pemakaians = Pemakaian::with('pelanggan')->paginate(10);
 
         return view('laporan.index', compact(
             'totalPelanggan',
@@ -48,7 +51,8 @@ class LaporanController extends Controller
             'totalBelumBayar',
             'totalSudahBayar',
             'years',
-            'months'
+            'months',
+            'pemakaians'
         ));
     }
 
@@ -66,7 +70,8 @@ class LaporanController extends Controller
         $month = $request->month;
 
         // Get all transactions for the selected month
-        $pemakaians = Pemakaian::where('tahun', $year)
+        $pemakaians = Pemakaian::with('pelanggan')
+                              ->where('tahun', $year)
                               ->where('bulan', $month)
                               ->orderBy('NoKontrol')
                               ->get();
@@ -76,8 +81,15 @@ class LaporanController extends Controller
         $totalBiayaBeban = $pemakaians->sum('biayabebanpemakai');
         $totalBiayaPemakaian = $pemakaians->sum('biayapemakaian');
         $totalJumlahBayar = $pemakaians->sum('jumlahbayar');
-        $totalBelumBayar = $pemakaians->where('status', 'Belum Bayar')->sum('jumlahbayar');
-        $totalSudahBayar = $pemakaians->where('status', 'Lunas')->sum('jumlahbayar');
+
+        // Fix: Make sure we're working with objects, not arrays
+        $totalBelumBayar = $pemakaians->filter(function($item) {
+            return $item->status === 'Belum Bayar';
+        })->sum('jumlahbayar');
+
+        $totalSudahBayar = $pemakaians->filter(function($item) {
+            return $item->status === 'Lunas';
+        })->sum('jumlahbayar');
 
         // Get month name
         $months = [
@@ -90,6 +102,18 @@ class LaporanController extends Controller
             '07' => 'Juli',
             '08' => 'Agustus',
             '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember',
+            '1' => 'Januari',
+            '2' => 'Februari',
+            '3' => 'Maret',
+            '4' => 'April',
+            '5' => 'Mei',
+            '6' => 'Juni',
+            '7' => 'Juli',
+            '8' => 'Agustus',
+            '9' => 'September',
             '10' => 'Oktober',
             '11' => 'November',
             '12' => 'Desember'
@@ -141,6 +165,15 @@ class LaporanController extends Controller
                                   ->where('bulan', $month)
                                   ->get();
 
+            // Fix: Use filter instead of where for collection
+            $belumBayar = $pemakaians->filter(function($item) {
+                return $item->status === 'Belum Bayar';
+            })->sum('jumlahbayar');
+
+            $sudahBayar = $pemakaians->filter(function($item) {
+                return $item->status === 'Lunas';
+            })->sum('jumlahbayar');
+
             $monthlySummaries[] = [
                 'month' => $month,
                 'month_name' => $this->getMonthName($month),
@@ -148,8 +181,8 @@ class LaporanController extends Controller
                 'total_biaya_beban' => $pemakaians->sum('biayabebanpemakai'),
                 'total_biaya_pemakaian' => $pemakaians->sum('biayapemakaian'),
                 'total_jumlah_bayar' => $pemakaians->sum('jumlahbayar'),
-                'total_belum_bayar' => $pemakaians->where('status', 'Belum Bayar')->sum('jumlahbayar'),
-                'total_sudah_bayar' => $pemakaians->where('status', 'Lunas')->sum('jumlahbayar'),
+                'total_belum_bayar' => $belumBayar,
+                'total_sudah_bayar' => $sudahBayar,
                 'jumlah_pelanggan' => $pemakaians->count(),
             ];
         }
@@ -184,21 +217,19 @@ class LaporanController extends Controller
     /**
      * Generate custom date range report
      */
-    /**
- * Generate custom date range report
- */
-public function dateRange(Request $request)
-{
-    $request->validate([
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-    ]);
+    public function dateRange(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
-    $startDate = Carbon::parse($request->start_date);
-    $endDate = Carbon::parse($request->end_date);
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
 
-    // Perbaikan query untuk SQLite
-    $pemakaians = Pemakaian::whereRaw("(tahun || '-' || bulan || '-01') BETWEEN ? AND ?", [
+        // Perbaikan query untuk SQLite
+        $pemakaians = Pemakaian::with('pelanggan')
+                    ->whereRaw("(tahun || '-' || bulan || '-01') BETWEEN ? AND ?", [
                         $startDate->format('Y-m-d'),
                         $endDate->format('Y-m-d')
                     ])
@@ -207,36 +238,43 @@ public function dateRange(Request $request)
                     ->orderBy('NoKontrol')
                     ->get();
 
-    // Calculate totals
-    $totalPemakaian = $pemakaians->sum('jumlahpakai');
-    $totalBiayaBeban = $pemakaians->sum('biayabebanpemakai');
-    $totalBiayaPemakaian = $pemakaians->sum('biayapemakaian');
-    $totalJumlahBayar = $pemakaians->sum('jumlahbayar');
-    $totalBelumBayar = $pemakaians->where('status', 'Belum Bayar')->sum('jumlahbayar');
-    $totalSudahBayar = $pemakaians->where('status', 'Lunas')->sum('jumlahbayar');
+        // Calculate totals
+        $totalPemakaian = $pemakaians->sum('jumlahpakai');
+        $totalBiayaBeban = $pemakaians->sum('biayabebanpemakai');
+        $totalBiayaPemakaian = $pemakaians->sum('biayapemakaian');
+        $totalJumlahBayar = $pemakaians->sum('jumlahbayar');
 
-    // Get company information
-    $companyInfo = [
-        'name' => 'PLN INDONESIA',
-        'address' => 'Jl. Pemuda No. 123, Jakarta',
-        'phone' => '(021) 1234-5678',
-        'email' => 'info@PLN.co.id',
-        'website' => 'www.PLN.co.id'
-    ];
+        // Fix: Use filter instead of where for collection
+        $totalBelumBayar = $pemakaians->filter(function($item) {
+            return $item->status === 'Belum Bayar';
+        })->sum('jumlahbayar');
 
-    return view('laporan.date-range', compact(
-        'pemakaians',
-        'startDate',
-        'endDate',
-        'totalPemakaian',
-        'totalBiayaBeban',
-        'totalBiayaPemakaian',
-        'totalJumlahBayar',
-        'totalBelumBayar',
-        'totalSudahBayar',
-        'companyInfo'
-    ));
-}
+        $totalSudahBayar = $pemakaians->filter(function($item) {
+            return $item->status === 'Lunas';
+        })->sum('jumlahbayar');
+
+        // Get company information
+        $companyInfo = [
+            'name' => 'PLN INDONESIA',
+            'address' => 'Jl. Pemuda No. 123, Jakarta',
+            'phone' => '(021) 1234-5678',
+            'email' => 'info@PLN.co.id',
+            'website' => 'www.PLN.co.id'
+        ];
+
+        return view('laporan.date-range', compact(
+            'pemakaians',
+            'startDate',
+            'endDate',
+            'totalPemakaian',
+            'totalBiayaBeban',
+            'totalBiayaPemakaian',
+            'totalJumlahBayar',
+            'totalBelumBayar',
+            'totalSudahBayar',
+            'companyInfo'
+        ));
+    }
 
     /**
      * Generate status report (paid/unpaid)
@@ -253,7 +291,7 @@ public function dateRange(Request $request)
         $year = $request->year;
         $month = $request->month;
 
-        $query = Pemakaian::query();
+        $query = Pemakaian::with('pelanggan');
 
         // Filter by status if not 'all'
         if ($status !== 'all') {
@@ -325,7 +363,8 @@ public function dateRange(Request $request)
         $month = $request->month;
 
         // Get all transactions for the selected month
-        $pemakaians = Pemakaian::where('tahun', $year)
+        $pemakaians = Pemakaian::with('pelanggan')
+                              ->where('tahun', $year)
                               ->where('bulan', $month)
                               ->orderBy('NoKontrol')
                               ->get();
@@ -335,8 +374,15 @@ public function dateRange(Request $request)
         $totalBiayaBeban = $pemakaians->sum('biayabebanpemakai');
         $totalBiayaPemakaian = $pemakaians->sum('biayapemakaian');
         $totalJumlahBayar = $pemakaians->sum('jumlahbayar');
-        $totalBelumBayar = $pemakaians->where('status', 'Belum Bayar')->sum('jumlahbayar');
-        $totalSudahBayar = $pemakaians->where('status', 'Lunas')->sum('jumlahbayar');
+
+        // Fix: Use filter instead of where for collection
+        $totalBelumBayar = $pemakaians->filter(function($item) {
+            return $item->status === 'Belum Bayar';
+        })->sum('jumlahbayar');
+
+        $totalSudahBayar = $pemakaians->filter(function($item) {
+            return $item->status === 'Lunas';
+        })->sum('jumlahbayar');
 
         // Get month name
         $monthName = $this->getMonthName($month);
@@ -397,6 +443,15 @@ public function dateRange(Request $request)
                                   ->where('bulan', $month)
                                   ->get();
 
+            // Fix: Use filter instead of where for collection
+            $belumBayar = $pemakaians->filter(function($item) {
+                return $item->status === 'Belum Bayar';
+            })->sum('jumlahbayar');
+
+            $sudahBayar = $pemakaians->filter(function($item) {
+                return $item->status === 'Lunas';
+            })->sum('jumlahbayar');
+
             $monthlySummaries[] = [
                 'month' => $month,
                 'month_name' => $this->getMonthName($month),
@@ -404,8 +459,8 @@ public function dateRange(Request $request)
                 'total_biaya_beban' => $pemakaians->sum('biayabebanpemakai'),
                 'total_biaya_pemakaian' => $pemakaians->sum('biayapemakaian'),
                 'total_jumlah_bayar' => $pemakaians->sum('jumlahbayar'),
-                'total_belum_bayar' => $pemakaians->where('status', 'Belum Bayar')->sum('jumlahbayar'),
-                'total_sudah_bayar' => $pemakaians->where('status', 'Lunas')->sum('jumlahbayar'),
+                'total_belum_bayar' => $belumBayar,
+                'total_sudah_bayar' => $sudahBayar,
                 'jumlah_pelanggan' => $pemakaians->count(),
             ];
         }
@@ -463,7 +518,7 @@ public function dateRange(Request $request)
         $year = $request->year;
         $month = $request->month;
 
-        $query = Pemakaian::query();
+        $query = Pemakaian::with('pelanggan');
 
         // Filter by status if not 'all'
         if ($status !== 'all') {
@@ -558,6 +613,18 @@ public function dateRange(Request $request)
             '07' => 'Juli',
             '08' => 'Agustus',
             '09' => 'September',
+            '10' => 'Oktober',
+            '11' => 'November',
+            '12' => 'Desember',
+            '1' => 'Januari',
+            '2' => 'Februari',
+            '3' => 'Maret',
+            '4' => 'April',
+            '5' => 'Mei',
+            '6' => 'Juni',
+            '7' => 'Juli',
+            '8' => 'Agustus',
+            '9' => 'September',
             '10' => 'Oktober',
             '11' => 'November',
             '12' => 'Desember'

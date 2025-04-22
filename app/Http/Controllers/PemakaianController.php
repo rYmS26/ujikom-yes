@@ -51,6 +51,24 @@ class PemakaianController extends Controller
         return view('pemakaian.create', compact('pelanggans'));
     }
 
+    // Add this new method to get the last meter reading
+    public function getLastMeterReading($noKontrol)
+    {
+        $lastPemakaian = Pemakaian::where('NoKontrol', $noKontrol)
+                                ->orderBy('tahun', 'desc')
+                                ->orderBy('bulan', 'desc')
+                                ->first();
+
+        if ($lastPemakaian) {
+            return response()->json([
+                'meterakhir' => $lastPemakaian->meterakhir,
+                'tahun' => $lastPemakaian->tahun,
+                'bulan' => $lastPemakaian->bulan
+            ]);
+        }
+
+        return response()->json(['meterakhir' => 0]);
+    }
     public function store(Request $request)
     {
         $request->validate([

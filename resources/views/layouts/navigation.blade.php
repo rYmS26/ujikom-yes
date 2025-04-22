@@ -52,16 +52,16 @@
                     @endif
                     @if(Auth::user()->role === 'admin')
                         <x-nav-link :href="route('laporan.index')" :active="request()->routeIs('laporan.index')">
-                            {{ __('Laporan') }}
+                            {{ __('Laporan dan history') }}
                         </x-nav-link>
                     @endif
 
                     {{-- New History Menu --}}
-                    @if(Auth::user()->role === 'admin')
+                    <!-- @if(Auth::user()->role === 'admin')
                     <x-nav-link :href="route('history.index')" :active="request()->routeIs('history.index')">
                         {{ __('History') }}
                     </x-nav-link>
-                    @endif
+                    @endif -->
                 </div>
             </div>
 
@@ -150,16 +150,16 @@
 
             @if(Auth::user()->role === 'admin')
                 <x-responsive-nav-link :href="route('laporan.index')" :active="request()->routeIs('laporan.index')">
-                    {{ __('laporan') }}
+                    {{ __('laporan dan history') }}
                 </x-responsive-nav-link>
             @endif
 
             {{-- New History Menu for Mobile --}}
-            @if(Auth::user()->role === 'admin')
+            <!-- @if(Auth::user()->role === 'admin')
             <x-responsive-nav-link :href="route('history.index')" :active="request()->routeIs('history.index')">
                 {{ __('History') }}
             </x-responsive-nav-link>
-            @endif
+            @endif -->
         </div>
 
         <!-- Responsive Settings Options -->

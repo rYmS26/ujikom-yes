@@ -52,7 +52,7 @@
             </div>
 
             <!-- Filter Status -->
-            <div>
+            <div class="flex flex-col">
                 <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select name="status" id="status" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Semua Status</option>
